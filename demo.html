@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<title>onFontsLoad example</title>
+	<style type="text/css">
+		#loading {
+			display: inline-block;
+			background-color: #3A87AD;
+			padding: 1px 4px 2px;
+			-webkit-border-radius: 3px;
+			-moz-border-radius: 3px;
+			border-radius: 3px;
+			font-size: 14px;
+			font-weight: bold;
+			font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+			line-height: 16px;
+			color: white;
+			text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+		}
+		#fontsContainer {
+			display: none;
+			font-size: 26px;
+			line-height: 26px;
+		}
+		#fontsContainer > div {
+			margin-bottom: 10px
+		}
+	</style>
+	<script type="text/javascript" src="FontLoader.js"></script>
+</head>
+<body>
+	<div id="loading">loading fonts</div>
+	<div id="fontsContainer"></div>
+	<script type="text/javascript">
+		var loadingElm = document.getElementById("loading"),
+			fontsContainerElm = document.getElementById("fontsContainer"),
+			fontLoader,
+			fontFamiliesArray = [
+				"Titan One",
+				"Courgette",
+				"Fugaz One",
+				"Shojumaru",
+				"Kaushan Script",
+				"Capriola",
+				"Devonshire",
+				"Fredericka the Great"
+			];
+		
+		function addFonts() {
+			var i, link, div, head = document.getElementsByTagName("head")[0];
+			// For each font family create <link> in head and <div> with text in fontsContainer
+			for (i = 0; i < fontFamiliesArray.length; i++) {
+				link = document.createElement("link");
+				link.rel = "stylesheet";
+				link.type = "text/css";
+				link.href = "http://fonts.googleapis.com/css?family=" + fontFamiliesArray[i];
+				head.appendChild(link);
+				
+				div = document.createElement("div");
+				div.style.fontFamily = fontFamiliesArray[i];
+				div.textContent = "The quick brown fox jumps over the lazy dog";
+				fontsContainerElm.appendChild(div);
+			}
+		}
+		
+		fontLoader = new FontLoader(fontFamiliesArray, {
+			"fontsLoaded": function(error) {
+				console.log("error: " + error);
+				loadingElm.style.display = "none";
+				fontsContainerElm.style.display = "block";
+			},
+			"fontLoaded": function(fontFamily) {
+				console.log("font loaded: " + fontFamily);
+			}
+		}, 3000);
+		
+		fontLoader.loadFonts();
+		
+		addFonts();
+	</script>
+</body>
+</html>
