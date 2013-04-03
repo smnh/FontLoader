@@ -27,4 +27,5 @@ var fontLoader = new FontLoader(["font family 1", "font family 2", "font family 
         }
 	}
 }, 3000);
+fontLoader.loadFonts();
 ```
