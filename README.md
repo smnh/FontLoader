@@ -9,6 +9,8 @@ The `FontLoader(fontFamiliesArray, delegate, timeout)` constructor receives thre
 2. Delegate object with two optional callback methods: `fontLoaded()` and `fontsLoaded()`.
 3. Optional number with a timeout (if not specified no timeout set).
 
+More info on how `FontLoader` works can be found [here](http://smnh.me/web-font-loading-detection-without-timers/).
+
 Example
 =======
 
