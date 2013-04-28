@@ -60,9 +60,9 @@
 				}, this.timeout);
 			}
 			
-			// Use pretty big fonts "50px" so the smallest difference between standard "serif" fonts and tested font-family will be noticeable.
+			// Use constant line-height so there won't be changes in height because Adobe Blank uses zero width but not zero height.
 			this._testContainer = document.createElement("div");
-			this._testContainer.style.cssText = "position:absolute; left:-10000px; top:-10000px; white-space: nowrap; font-size:50px; visibility: hidden;";
+			this._testContainer.style.cssText = "position:absolute; left:-10000px; top:-10000px; white-space:nowrap; font-size:20px; line-height:20px; visibility:hidden;";
 			
 			if (FontLoader.testDiv === null) {
 				this._runOnce();
@@ -117,10 +117,7 @@
 		},
 		_checkAdobeBlankSize: function() {
 			var adobeBlankDiv = this._testContainer.firstChild;
-			if (adobeBlankDiv.offsetWidth === 0) {
-				window.clearInterval(this._intervalId);
-				this._adobeBlankLoaded(adobeBlankDiv);
-			}
+			this._adobeBlankLoaded(adobeBlankDiv);
 		},
 		_adobeBlankLoaded: function(adobeBlankDiv) {
 			// Prevent false size change, for example if AdobeBlank height is higher than fallback font.
@@ -128,15 +125,20 @@
 				return;
 			}
 			
+			FontLoader.referenceFontFamiliesSizes.push(new Size(adobeBlankDiv.offsetWidth, adobeBlankDiv.offsetHeight));
+			
 			if (this._adobeBlankSizeWatcher !== null) {
+				// SizeWatcher method
 				this._adobeBlankSizeWatcher.endWatching();
+				this._adobeBlankSizeWatcher.removeScrollWatchers();
 				this._adobeBlankSizeWatcher = null;
+			} else {
+				// Polling method (IE)
+				window.clearInterval(this._intervalId);
+				adobeBlankDiv.parentNode.removeChild(adobeBlankDiv);
 			}
 			
-			FontLoader.referenceFontFamiliesSizes.push(new Size(adobeBlankDiv.offsetWidth, adobeBlankDiv.offsetHeight));
-
 			this._testContainer.parentNode.removeChild(this._testContainer);
-			adobeBlankDiv.parentNode.removeChild(adobeBlankDiv);
 
 			this._loadFonts();
 		},
@@ -453,6 +455,16 @@
 			}
 			
 			this._state = SizeWatcher.states.appendedScrollWatchers;
+		},
+		removeScrollWatchers: function() {
+			//noinspection JSBitwiseOperatorUsage
+			if (this._direction & SizeWatcher.directions.decrease) {
+				if (this._sizeDecreaseWatcherElm.parentNode) {
+					this._sizeDecreaseWatcherElm.parentNode.removeChild(this._sizeDecreaseWatcherElm);
+				}
+			} else if (this._element.parentNode) {
+				this._element.parentNode.removeChild(this._element);
+			}
 		},
 		prepareForWatch: function() {
 			var parentNode,
