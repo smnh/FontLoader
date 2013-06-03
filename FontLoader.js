@@ -94,7 +94,7 @@
 
 			adobeBlankDiv.style.fontFamily = adobeBlankFallbackFont;
 
-			if (isIE) {
+			if (isIE || window.opera) {
 				this._testContainer.appendChild(adobeBlankDiv);
 				// Start polling element sizes but also do first synchronous check in case all fonts where already loaded.
 				this._intervalId = window.setInterval(function intervalFire() {
@@ -150,7 +150,7 @@
 			for (i = 0; i < this._numberOfFontFamilies; i++) {
 				this._fontsMap[this._fontFamiliesArray[i]] = true;
 
-				if (isIE) {
+				if (isIE || window.opera) {
 					for (j = 0; j < FontLoader.referenceFontFamilies.length; j++) {
 						clonedDiv = FontLoader.testDiv.cloneNode(true);
 						clonedDiv.setAttribute("data-font-family", this._fontFamiliesArray[i]);
@@ -181,7 +181,7 @@
 			// Append the testContainer after all test elements to minimize DOM insertions
 			document.body.appendChild(this._testContainer);
 
-			if (isIE) {
+			if (isIE || window.opera) {
 				// Start polling element sizes but also do first synchronous check in case all fonts where already loaded.
 				this._intervalId = window.setInterval(function intervalFire() {
 					self._checkSizes();
