@@ -273,7 +273,7 @@
 					}
 				}
 				callbackParameter = {
-					message: "Not all fonts are loaded",
+					message: "Not all fonts were loaded",
 					notLoadedFontFamilies: notLoadedFontFamilies
 				};
 			} else {
