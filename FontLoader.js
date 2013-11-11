@@ -345,8 +345,7 @@
 	 * @param {Object}      options
 	 * @param {HTMLElement} options.container An element to which special observing elements will be added. Must be in DOM tree
 	 *                      when prepareForWatch() method is called.
-	 * @param {Object}      options.delegate A delegate object
-	 * @param {Function}    options.delegate.sizeWatcherChangedSize A delegate object's method which will be invoked, in
+	 * @param {Object}      options.delegate A delegate object with a sizeWatcherChangedSize method which will be invoked, in
 	 *                      context of the delegate object, when change in size occurs. This method is invoked with single
 	 *                      parameter which is the current SizeWatcher instance.
 	 * @param {Size}        [options.size] The pre-calculated initial size of your element. When passed, the element is not
@@ -528,10 +527,12 @@
 
 			//noinspection JSBitwiseOperatorUsage
 			if (this._direction & SizeWatcher.directions.decrease) {
+				//noinspection JSValidateTypes
 				this._sizeDecreaseWatcherElm.addEventListener("scroll", this, false);
 			}
 			//noinspection JSBitwiseOperatorUsage
 			if (this._direction & SizeWatcher.directions.increase) {
+				//noinspection JSValidateTypes
 				this._sizeIncreaseWatcherElm.addEventListener("scroll", this, false);
 			}
 			
@@ -544,10 +545,12 @@
 
 			//noinspection JSBitwiseOperatorUsage
 			if (this._direction & SizeWatcher.directions.decrease) {
+				//noinspection JSValidateTypes
 				this._sizeDecreaseWatcherElm.removeEventListener("scroll", this, false);
 			}
 			//noinspection JSBitwiseOperatorUsage
 			if (this._direction & SizeWatcher.directions.increase) {
+				//noinspection JSValidateTypes
 				this._sizeIncreaseWatcherElm.removeEventListener("scroll", this, false);
 			}
 			this._state = SizeWatcher.states.appendedScrollWatchers;
