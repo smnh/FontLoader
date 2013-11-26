@@ -32,56 +32,67 @@
 </head>
 <body>
 	<div id="loading">loading fonts</div>
-	<div id="fontsContainer"></div>
+	<div id="fontsContainer">
+		<div style="font-family: 'Titan One', serif;">The quick brown fox jumps over the lazy dog</div>
+		<div style="font-family: 'Courgette', serif;">The quick brown fox jumps over the lazy dog</div>
+		<div style="font-family: 'Fugaz One', serif;">The quick brown fox jumps over the lazy dog</div>
+		<div style="font-family: 'Shojumaru', serif;">The quick brown fox jumps over the lazy dog</div>
+		<div style="font-family: 'Kaushan Script', serif;">The quick brown fox jumps over the lazy dog</div>
+		<div style="font-family: 'Capriola', serif;">The quick brown fox jumps over the lazy dog</div>
+		<div style="font-family: 'Devonshire', serif;">The quick brown fox jumps over the lazy dog</div>
+		<div style="font-family: 'Fredericka the Great', serif;">The quick brown fox jumps over the lazy dog</div>
+	</div>
 	<script type="text/javascript">
 		var loadingElm = document.getElementById("loading"),
 			fontsContainerElm = document.getElementById("fontsContainer"),
 			elementsMap = {},
 			fontLoader,
-			fontFamiliesArray = [
-				"Titan One",
-				"Courgette",
-				"Fugaz One",
-				"Shojumaru",
-				"Kaushan Script",
-				"Capriola",
-				"Devonshire",
-				"Fredericka the Great"
-			];
+			fontFamiliesArray = [];
+		
+		// When developer tools are closed IE8 does not have console object.
+		if (typeof console === "undefined") {
+			console = {log: function() {}};
+		}
 		
 		function addFonts() {
-			var i, link, div, head = document.getElementsByTagName("head")[0];
-			// For each font family create <link> in head and <div> with text in fontsContainer
-			for (i = 0; i < fontFamiliesArray.length; i++) {
+			var i, link, div, fontFamily, head = document.getElementsByTagName("head")[0];
+			// For each font family create <link> in head
+			for (i = 0; i < fontsContainerElm.childNodes.length - 1; i++) {
+				if (fontsContainer.childNodes[i].nodeType !== 1) continue;
+
+				div = fontsContainerElm.childNodes[i];
+				fontFamily = div.style.fontFamily.match(/[^'",;]+/)[0];
+				elementsMap[fontFamily] = div;
+				fontFamiliesArray.push(fontFamily);
+				
 				link = document.createElement("link");
 				link.rel = "stylesheet";
 				link.type = "text/css";
-				link.href = "http://fonts.googleapis.com/css?family=" + fontFamiliesArray[i];
+				link.href = "http://fonts.googleapis.com/css?family=" + fontFamily;
 				head.appendChild(link);
-				
-				div = document.createElement("div");
-				div.style.fontFamily = fontFamiliesArray[i];
-				div.textContent = "The quick brown fox jumps over the lazy dog";
-				fontsContainerElm.appendChild(div);
-				console.log("font added " + fontFamiliesArray[i] + " element size: " + div.offsetWidth + "x" + div.offsetHeight);
-				elementsMap[fontFamiliesArray[i]] = div;
 			}
 		}
+
+
+
+		window.setTimeout(function() {
+			
+			addFonts();
+
+			fontLoader = new FontLoader(fontFamiliesArray, {
+				"fontsLoaded": function(error) {
+					console.log("error:", error);
+					loadingElm.style.display = "none";
+					fontsContainerElm.style.visibility = "visible";
+				},
+				"fontLoaded": function(fontFamily) {
+					console.log("font loaded: " + fontFamily + " element size: " + elementsMap[fontFamily].offsetWidth + "x" + elementsMap[fontFamily].offsetHeight);
+				}
+			}, 3000);
+			fontLoader.loadFonts();
+			
+		}, 0);
 		
-		fontLoader = new FontLoader(fontFamiliesArray, {
-			"fontsLoaded": function (error) {
-				console.log("error:", error);
-				loadingElm.style.display = "none";
-				fontsContainerElm.style.visibility = "visible";
-			},
-			"fontLoaded": function (fontFamily) {
-				console.log("font loaded: " + fontFamily + " element size: " + elementsMap[fontFamily].offsetWidth + "x" + elementsMap[fontFamily].offsetHeight);
-			}
-		}, null);
-		
-		addFonts();
-		
-		fontLoader.loadFonts();
 	</script>
 </body>
 </html>
