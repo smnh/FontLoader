@@ -429,6 +429,7 @@
 		this._sizeDecreaseWatcherElm = null;
 		this._sizeIncreaseWatcherElm = null;
 		this._state = SizeWatcher.states.initialized;
+		this._scrollAmount = 2;
 		
 		this._generateScrollWatchers(options.size);
 		this._appendScrollWatchersToElement(options.container);
@@ -464,11 +465,11 @@
 			this._size = size;
 			//noinspection JSBitwiseOperatorUsage
 			if (this._direction & SizeWatcher.directions.increase) {
-				this._sizeIncreaseWatcherContentElm.style.cssText = "width: " + (size.width + 1) + "px; height: " + (size.height + 1) + "px;";
+				this._sizeIncreaseWatcherContentElm.style.cssText = "width: " + (size.width + this._scrollAmount) + "px; height: " + (size.height + this._scrollAmount) + "px;";
 			}
 			//noinspection JSBitwiseOperatorUsage
 			if (this._direction & SizeWatcher.directions.decrease) {
-				this._sizeDecreaseWatcherElm.style.cssText = "position:absolute; left: 0px; top: 0px; overflow: hidden; width: " + (size.width - 1) + "px; height: " + (size.height - 1) + "px;";
+				this._sizeDecreaseWatcherElm.style.cssText = "position:absolute; left: 0px; top: 0px; overflow: hidden; width: " + (size.width - this._scrollAmount) + "px; height: " + (size.height - this._scrollAmount) + "px;";
 			}
 		},
 		_generateScrollWatchers: function(size) {
@@ -566,13 +567,13 @@
 			var elementScrolled = true;
 			//noinspection JSBitwiseOperatorUsage
 			if (this._dimension & SizeWatcher.dimensions.vertical) {
-				element.scrollTop = 1;
-				elementScrolled = elementScrolled && element.scrollTop === 1;
+				element.scrollTop = this._scrollAmount;
+				elementScrolled = elementScrolled && element.scrollTop > 0;
 			}
 			//noinspection JSBitwiseOperatorUsage
 			if (this._dimension & SizeWatcher.dimensions.horizontal) {
-				element.scrollLeft = 1;
-				elementScrolled = elementScrolled && element.scrollLeft === 1;
+				element.scrollLeft = this._scrollAmount;
+				elementScrolled = elementScrolled && element.scrollLeft > 0;
 			}
 			return elementScrolled;
 		},
