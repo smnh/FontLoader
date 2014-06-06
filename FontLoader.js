@@ -49,7 +49,20 @@
 		this._finished = false;
 	}
 
-	namespace.FontLoader = FontLoader;
+	if(typeof define == 'function' && typeof define.amd == 'object' && define.amd) {
+	// define as an anonymous module
+	define(function() {
+		return FontLoader;
+	});
+	// check for `exports` after `define` in case a build optimizer adds an `exports` object
+	}
+	else if(typeof module === 'object' && typeof module.exports === 'object') {
+		module.exports = FontLoader;
+	}
+	else {
+		namespace.FontLoader = FontLoader;
+	}
+	
 	
 	FontLoader.testDiv = null;
 	FontLoader.useAdobeBlank = !isIE || ieVer >= 11.0;
