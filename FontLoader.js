@@ -1,4 +1,16 @@
-(function(namespace) {
+(function(root, definition) {
+	if (typeof define === 'function' && define.amd) {
+		// AMD. Register as an anonymous module.
+		define([], definition);
+	} else if (typeof exports === 'object') {
+		// Node. Does not work with strict CommonJS, but only CommonJS-like 
+		// environments that support module.exports, like Node.
+		module.exports = definition();
+	} else {
+		// Browser globals (root is window)
+		root.FontLoader = definition();
+	}
+}(window, function() {
 	
 	var isIE = /MSIE/i.test(navigator.userAgent),
 		ieVer = null;
@@ -49,21 +61,6 @@
 		this._finished = false;
 	}
 
-	if(typeof define == 'function' && typeof define.amd == 'object' && define.amd) {
-	// define as an anonymous module
-	define(function() {
-		return FontLoader;
-	});
-	// check for `exports` after `define` in case a build optimizer adds an `exports` object
-	}
-	else if(typeof module === 'object' && typeof module.exports === 'object') {
-		module.exports = FontLoader;
-	}
-	else {
-		namespace.FontLoader = FontLoader;
-	}
-	
-	
 	FontLoader.testDiv = null;
 	FontLoader.useAdobeBlank = !isIE || ieVer >= 11.0;
 	FontLoader.useResizeEvent = isIE && ieVer < 11.0 && typeof document.attachEvent !== "undefined";
@@ -677,4 +674,6 @@
 		}
 	};
 	
-}(window));
+	return FontLoader;
+	
+}));
