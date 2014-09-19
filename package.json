@@ -1,0 +1,15 @@
+{
+  "name": "FontLoader",
+  "version": "0.0.1",
+  "description": "detects and notifies when specified font-families loaded and rendered by the browser",
+  "main": "FontLoader.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/smnh/FontLoader"
+  },
+  "author": "smnh",
+  "license": "MIT"
+}
