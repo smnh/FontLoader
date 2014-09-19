@@ -4,7 +4,7 @@
   "description": "detects and notifies when specified font-families loaded and rendered by the browser",
   "main": "FontLoader.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
