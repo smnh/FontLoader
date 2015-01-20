@@ -107,6 +107,14 @@
 				FontLoader.testDiv = document.createElement("div");
 				FontLoader.testDiv.style.position = "absolute";
 				FontLoader.testDiv.appendChild(document.createTextNode(FontLoader.referenceText));
+
+				if (FontLoader.useAdobeBlank) {
+					// Add AdobeBlank @font-face
+					adobeBlankFontFaceStyle = document.createElement("style");
+					adobeBlankFontFaceStyle.setAttribute("type", "text/css");
+					adobeBlankFontFaceStyle.appendChild(document.createTextNode(FontLoader.adobeBlankFontFaceRule));
+					document.getElementsByTagName("head")[0].appendChild(adobeBlankFontFaceStyle);
+				}
 			}
 
 			if (!FontLoader.useAdobeBlank) {
@@ -124,12 +132,6 @@
 				clonedDiv.parentNode.removeChild(clonedDiv);
 				this._loadFonts();
 			} else {
-				// Add AdobeBlank @font-face
-				adobeBlankFontFaceStyle = document.createElement("style");
-				adobeBlankFontFaceStyle.setAttribute("type", "text/css");
-				adobeBlankFontFaceStyle.appendChild(document.createTextNode(FontLoader.adobeBlankFontFaceRule));
-				document.getElementsByTagName("head")[0].appendChild(adobeBlankFontFaceStyle);
-
 				// Get default dimensions
 				adobeBlankDiv = /** @type HTMLElement */FontLoader.testDiv.cloneNode(true);
 				this._testContainer.appendChild(adobeBlankDiv);
