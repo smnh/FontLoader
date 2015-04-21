@@ -566,7 +566,7 @@
 				
 				// Traverse tree to the top node to see if element is in the DOM tree.
 				parentNode = this._element.parentNode;
-				while (parentNode !== window.document && parentNode !== null) {
+				while (parentNode !== this._document && parentNode !== null) {
 					parentNode = parentNode.parentNode;
 				}
 				
