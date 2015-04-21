@@ -36,20 +36,22 @@
 	 * field holding the error description and the "notLoadedFontFamilies" field holding an array with all the
 	 * font-families that weren't loaded. Otherwise the parameter is null.
 	 *
-	 * @param {Array}     fontFamiliesArray       Array of font-family strings.
-	 * @param {Object}    delegate                Delegate object whose delegate methods will be invoked in its own context.
-	 * @param {Function}  [delegate.fontsLoaded]  Delegate method invoked after all fonts are loaded or timeout is reached.
-	 * @param {Function}  [delegate.fontLoaded]   Delegate method invoked for each loaded font with its font-family string as its single parameter.
-	 * @param {Number}    [timeout=3000]          Timeout in milliseconds. Pass "null" to disable timeout.
+	 * @param {Array}         fontFamiliesArray       Array of font-family strings.
+	 * @param {Object}        delegate                Delegate object whose delegate methods will be invoked in its own context.
+	 * @param {Function}      [delegate.fontsLoaded]  Delegate method invoked after all fonts are loaded or timeout is reached.
+	 * @param {Function}      [delegate.fontLoaded]   Delegate method invoked for each loaded font with its font-family string as its single parameter.
+	 * @param {Number}        [timeout=3000]          Timeout in milliseconds. Pass "null" to disable timeout.
+	 * @param {HTMLDocument}  [contextDocument]       The DOM tree context to use, if none provided then it will be the document.
 	 * @constructor
 	 */
-	function FontLoader(fontFamiliesArray, delegate, timeout) {
+	function FontLoader(fontFamiliesArray, delegate, timeout, contextDocument) {
 		// Public
 		this.delegate = delegate;
 		this.timeout = (typeof timeout !== "undefined") ? timeout : 3000;
 
 		// Private
 		this._fontFamiliesArray = fontFamiliesArray.slice(0);
+		this._testDiv = null;
 		this._testContainer = null;
 		this._adobeBlankSizeWatcher = null;
 		this._timeoutId = null;
@@ -59,9 +61,9 @@
 		this._numberOfFontFamilies = this._fontFamiliesArray.length;
 		this._fontsMap = {};
 		this._finished = false;
+		this._document = contextDocument || document;
 	}
 
-	FontLoader.testDiv = null;
 	FontLoader.useAdobeBlank = !isIE || ieVer >= 11.0;
 	FontLoader.useResizeEvent = isIE && ieVer < 11.0 && typeof document.attachEvent !== "undefined";
 	FontLoader.useIntervalChecking = window.opera || (isIE && ieVer < 11.0 && !FontLoader.useResizeEvent);
@@ -87,10 +89,10 @@
 			}
 			
 			// Use constant line-height so there won't be changes in height because Adobe Blank uses zero width but not zero height.
-			this._testContainer = document.createElement("div");
+			this._testContainer = this._document.createElement("div");
 			this._testContainer.style.cssText = "position:absolute; left:-10000px; top:-10000px; white-space:nowrap; font-size:20px; line-height:20px; visibility:hidden;";
 			
-			if (FontLoader.testDiv === null) {
+			if (this._testDiv === null) {
 				this._runOnce();
 			} else {
 				this._loadFonts();
@@ -103,15 +105,15 @@
 				adobeBlankFallbackFont = "serif";
 			
 			// Create testFiv template that will be cloned for each font
-			FontLoader.testDiv = document.createElement("div");
-			FontLoader.testDiv.style.position = "absolute";
-			FontLoader.testDiv.appendChild(document.createTextNode(FontLoader.referenceText));
+			this._testDiv = this._document.createElement("div");
+			this._testDiv.style.position = "absolute";
+			this._testDiv.appendChild(this._document.createTextNode(FontLoader.referenceText));
 
 			if (!FontLoader.useAdobeBlank) {
 				// Get default dimensions
-				clonedDiv = FontLoader.testDiv.cloneNode(true);
+				clonedDiv = this._testDiv.cloneNode(true);
 				this._testContainer.appendChild(clonedDiv);
-				document.body.appendChild(this._testContainer);
+				this._document.body.appendChild(this._testContainer);
 
 				for (j = 0; j < FontLoader.referenceFontFamilies.length; j++) {
 					clonedDiv.style.fontFamily = FontLoader.referenceFontFamilies[j];
@@ -123,15 +125,15 @@
 				this._loadFonts();
 			} else {
 				// Add AdobeBlank @font-face
-				adobeBlankFontFaceStyle = document.createElement("style");
+				adobeBlankFontFaceStyle = this._document.createElement("style");
 				adobeBlankFontFaceStyle.setAttribute("type", "text/css");
-				adobeBlankFontFaceStyle.appendChild(document.createTextNode(FontLoader.adobeBlankFontFaceRule));
-				document.getElementsByTagName("head")[0].appendChild(adobeBlankFontFaceStyle);
+				adobeBlankFontFaceStyle.appendChild(this._document.createTextNode(FontLoader.adobeBlankFontFaceRule));
+				this._document.getElementsByTagName("head")[0].appendChild(adobeBlankFontFaceStyle);
 
 				// Get default dimensions
-				adobeBlankDiv = /** @type HTMLElement */FontLoader.testDiv.cloneNode(true);
+				adobeBlankDiv = /** @type HTMLElement */this._testDiv.cloneNode(true);
 				this._testContainer.appendChild(adobeBlankDiv);
-				document.body.appendChild(this._testContainer);
+				this._document.body.appendChild(this._testContainer);
 
 				adobeBlankDiv.style.fontFamily = adobeBlankFallbackFont;
 
@@ -148,7 +150,8 @@
 						delegate: this,
 						continuous: true,
 						direction: SizeWatcher.directions.decrease,
-						dimension: SizeWatcher.dimensions.horizontal
+						dimension: SizeWatcher.dimensions.horizontal,
+						document: this._document
 					});
 					this._adobeBlankSizeWatcher.prepareForWatch();
 					this._adobeBlankSizeWatcher.beginWatching();
@@ -194,7 +197,7 @@
 
 				if (FontLoader.useResizeEvent) {
 					for (j = 0; j < FontLoader.referenceFontFamilies.length; j++) {
-						clonedDiv = FontLoader.testDiv.cloneNode(true);
+						clonedDiv = this._testDiv.cloneNode(true);
 						clonedDiv.setAttribute("data-font-family", this._fontFamiliesArray[i]);
 						clonedDiv.setAttribute("data-ref-font-family-index", String(j));
 						clonedDiv.style.fontFamily = FontLoader.referenceFontFamilies[j];
@@ -202,7 +205,7 @@
 					}
 				} else if (FontLoader.useIntervalChecking) {
 					for (j = 0; j < FontLoader.referenceFontFamilies.length; j++) {
-						clonedDiv = FontLoader.testDiv.cloneNode(true);
+						clonedDiv = this._testDiv.cloneNode(true);
 						clonedDiv.setAttribute("data-font-family", this._fontFamiliesArray[i]);
 						clonedDiv.setAttribute("data-ref-font-family-index", String(j));
 						clonedDiv.style.fontFamily = "'" + this._fontFamiliesArray[i] + "', " + FontLoader.referenceFontFamilies[j];
@@ -210,7 +213,7 @@
 					}
 				} else {
 					for (j = 0; j < FontLoader.referenceFontFamilies.length; j++) {
-						clonedDiv = FontLoader.testDiv.cloneNode(true);
+						clonedDiv = this._testDiv.cloneNode(true);
 						clonedDiv.setAttribute("data-font-family", this._fontFamiliesArray[i]);
 						clonedDiv.setAttribute("data-ref-font-family-index", String(j));
 						clonedDiv.style.fontFamily = FontLoader.referenceFontFamilies[j];
@@ -219,7 +222,8 @@
 							delegate: this,
 							size: FontLoader.referenceFontFamiliesSizes[j],
 							direction: SizeWatcher.directions.increase,
-							dimension: SizeWatcher.dimensions.horizontal
+							dimension: SizeWatcher.dimensions.horizontal,
+							document: this._document
 						});
 						// The prepareForWatch() and beginWatching() methods will be invoked in separate iterations to
 						// reduce number of browser's CSS recalculations.
@@ -229,7 +233,7 @@
 			}
 
 			// Append the testContainer after all test elements to minimize DOM insertions
-			document.body.appendChild(this._testContainer);
+			this._document.body.appendChild(this._testContainer);
 
 			if (FontLoader.useResizeEvent) {
 				for (j = 0; j < this._testContainer.childNodes.length; j++) {
@@ -407,25 +411,26 @@
 	 * 
 	 * Failing to invoke above methods in their predefined order will throw an exception.
 	 * 
-	 * @param {HTMLElement} element An element, size of which will be observed for changes.
-	 * @param {Object}      options
-	 * @param {HTMLElement} options.container An element to which special observing elements will be added. Must be in DOM tree
-	 *                      when prepareForWatch() method is called.
-	 * @param {Object}      options.delegate A delegate object with a sizeWatcherChangedSize method which will be invoked, in
-	 *                      context of the delegate object, when change in size occurs. This method is invoked with single
-	 *                      parameter which is the current SizeWatcher instance.
-	 * @param {Size}        [options.size] The pre-calculated initial size of your element. When passed, the element is not
-	 *                      asked for offsetWidth and offsetHeight, which may be useful to reduce browser's CSS
-	 *                      recalculations. If you will not pass the size parameter then its size calculation will be
-	 *                      deferred to prepareForWatch() method.
-	 * @param {Boolean}     [options.continuous=false] A boolean flag indicating if the SizeWatcher will watch only for
-	 *                      the first size change (default) or will continuously watch for size changes.
-	 * @param {Number}      [options.direction=SizeWatcher.directions.both] The direction of size change that should be
-	 *                      watched: SizeWatcher.directions.increase, SizeWatcher.directions.decrease or
-	 *                      SizeWatcher.directions.both
-	 * @param {Number}      [options.dimension=SizeWatcher.dimensions.both] The dimension of size change that should be
-	 *                      watched: SizeWatcher.dimensions.horizontal, SizeWatcher.dimensions.vertical or
-	 *                      SizeWatcher.dimensions.both
+	 * @param {HTMLElement}   element An element, size of which will be observed for changes.
+	 * @param {Object}        options
+	 * @param {HTMLElement}   options.container An element to which special observing elements will be added. Must be in DOM tree
+	 *                        when prepareForWatch() method is called.
+	 * @param {Object}        options.delegate A delegate object with a sizeWatcherChangedSize method which will be invoked, in
+	 *                        context of the delegate object, when change in size occurs. This method is invoked with single
+	 *                        parameter which is the current SizeWatcher instance.
+	 * @param {Size}          [options.size] The pre-calculated initial size of your element. When passed, the element is not
+	 *                        asked for offsetWidth and offsetHeight, which may be useful to reduce browser's CSS
+	 *                        recalculations. If you will not pass the size parameter then its size calculation will be
+	 *                        deferred to prepareForWatch() method.
+	 * @param {Boolean}       [options.continuous=false] A boolean flag indicating if the SizeWatcher will watch only for
+	 *                        the first size change (default) or will continuously watch for size changes.
+	 * @param {Number}        [options.direction=SizeWatcher.directions.both] The direction of size change that should be
+	 *                        watched: SizeWatcher.directions.increase, SizeWatcher.directions.decrease or
+	 *                        SizeWatcher.directions.both
+	 * @param {Number}        [options.dimension=SizeWatcher.dimensions.both] The dimension of size change that should be
+	 *                        watched: SizeWatcher.dimensions.horizontal, SizeWatcher.dimensions.vertical or
+	 *                        SizeWatcher.dimensions.both
+	 * @param {HTMLDocument}  [options.document] The DOM tree context to use, if none provided then it will be the document.
 	 * @constructor
 	 */
 	function SizeWatcher(element, options) {
@@ -440,7 +445,8 @@
 		this._sizeIncreaseWatcherElm = null;
 		this._state = SizeWatcher.states.initialized;
 		this._scrollAmount = 2;
-		
+		this._document = options.document || document;
+
 		this._generateScrollWatchers(options.size);
 		this._appendScrollWatchersToElement(options.container);
 	}
@@ -488,9 +494,9 @@
 			
 			//noinspection JSBitwiseOperatorUsage
 			if (this._direction & SizeWatcher.directions.increase) {
-				this._sizeIncreaseWatcherContentElm = document.createElement("div");
+				this._sizeIncreaseWatcherContentElm = this._document.createElement("div");
 				
-				this._sizeIncreaseWatcherElm = document.createElement("div");
+				this._sizeIncreaseWatcherElm = this._document.createElement("div");
 				this._sizeIncreaseWatcherElm.style.cssText = "position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden;";
 				this._sizeIncreaseWatcherElm.appendChild(this._sizeIncreaseWatcherContentElm);
 
@@ -499,7 +505,7 @@
 
 			//noinspection JSBitwiseOperatorUsage
 			if (this._direction & SizeWatcher.directions.decrease) {
-				this._sizeDecreaseWatcherElm = document.createElement("div");
+				this._sizeDecreaseWatcherElm = this._document.createElement("div");
 				this._sizeDecreaseWatcherElm.appendChild(this._element);
 			}
 			
