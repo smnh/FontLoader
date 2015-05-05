@@ -45,12 +45,48 @@
 	 * @constructor
 	 */
 	function FontLoader(fontFamiliesArray, delegate, timeout, contextDocument) {
+		var self = this;
+
 		// Public
 		this.delegate = delegate;
 		this.timeout = (typeof timeout !== "undefined") ? timeout : 3000;
 
+		// Process font families
+		this._fontFamiliesArray = [];
+
+		fontFamiliesArray.forEach(function (font) {
+			if (font.family) {
+				self._fontFamiliesArray.push(font);
+			} else if (font.indexOf(':') > -1) {
+				var variants = font.split(':')[1].split(',');
+				font = font.split(':')[0];
+
+				variants.forEach(function (variant) {
+					var style = 'normal';
+					if (variant.charAt(0) === 'i') {
+						style = 'italic';
+					} else if (variant.charAt(0) === 'b') {
+						style = 'bold';
+					} else if (variant.charAt(0) === 'o') {
+						style = 'oblique';
+					}
+
+					self._fontFamiliesArray.push({
+						family: font,
+						weight: parseInt(variant.charAt(1)) * 100,
+						style: style
+					});
+				});
+			} else {
+				self._fontFamiliesArray.push({
+					family: font,
+					weight: 400,
+					style: 'normal'
+				});
+			}
+		});
+
 		// Private
-		this._fontFamiliesArray = fontFamiliesArray.slice(0);
 		this._testDiv = null;
 		this._testContainer = null;
 		this._adobeBlankSizeWatcher = null;
