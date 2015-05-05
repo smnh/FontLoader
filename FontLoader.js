@@ -697,8 +697,8 @@
 					return;
 				}
 			}
-			
-			if (!this._continuous) {
+
+			if (!this._continuous || this._delegate.isFinished()) {
 				this.endWatching();
 			} else {
 				// Set the new size so in case of double scroll event we won't cause the delegate method to be executed twice
