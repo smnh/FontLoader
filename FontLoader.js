@@ -229,12 +229,14 @@
 
 			// Add div for each font-family
 			for (i = 0; i < this._numberOfFontFamilies; i++) {
-				this._fontsMap[this._fontFamiliesArray[i]] = true;
+				this._fontsMap[this._fontFamiliesArray[i].family + this._fontFamiliesArray[i].weight + this._fontFamiliesArray[i].style] = this._fontFamiliesArray[i];
 
 				if (FontLoader.useResizeEvent) {
 					for (j = 0; j < FontLoader.referenceFontFamilies.length; j++) {
 						clonedDiv = this._testDiv.cloneNode(true);
-						clonedDiv.setAttribute("data-font-family", this._fontFamiliesArray[i]);
+						clonedDiv.setAttribute("data-font-family", this._fontFamiliesArray[i].family);
+						clonedDiv.setAttribute("data-font-family-weight", this._fontFamiliesArray[i].weight);
+						clonedDiv.setAttribute("data-font-family-style", this._fontFamiliesArray[i].style);
 						clonedDiv.setAttribute("data-ref-font-family-index", String(j));
 						clonedDiv.style.fontFamily = FontLoader.referenceFontFamilies[j];
 						this._testContainer.appendChild(clonedDiv);
@@ -242,7 +244,9 @@
 				} else if (FontLoader.useIntervalChecking) {
 					for (j = 0; j < FontLoader.referenceFontFamilies.length; j++) {
 						clonedDiv = this._testDiv.cloneNode(true);
-						clonedDiv.setAttribute("data-font-family", this._fontFamiliesArray[i]);
+						clonedDiv.setAttribute("data-font-family", this._fontFamiliesArray[i].family);
+						clonedDiv.setAttribute("data-font-family-weight", this._fontFamiliesArray[i].weight);
+						clonedDiv.setAttribute("data-font-family-style", this._fontFamiliesArray[i].style);
 						clonedDiv.setAttribute("data-ref-font-family-index", String(j));
 						clonedDiv.style.fontFamily = "'" + this._fontFamiliesArray[i] + "', " + FontLoader.referenceFontFamilies[j];
 						this._testContainer.appendChild(clonedDiv);
@@ -250,7 +254,9 @@
 				} else {
 					for (j = 0; j < FontLoader.referenceFontFamilies.length; j++) {
 						clonedDiv = this._testDiv.cloneNode(true);
-						clonedDiv.setAttribute("data-font-family", this._fontFamiliesArray[i]);
+						clonedDiv.setAttribute("data-font-family", this._fontFamiliesArray[i].family);
+						clonedDiv.setAttribute("data-font-family-weight", this._fontFamiliesArray[i].weight);
+						clonedDiv.setAttribute("data-font-family-style", this._fontFamiliesArray[i].style);
 						clonedDiv.setAttribute("data-ref-font-family-index", String(j));
 						clonedDiv.style.fontFamily = FontLoader.referenceFontFamilies[j];
 						sizeWatcher = new SizeWatcher(/** @type HTMLElement */clonedDiv, {
@@ -285,6 +291,8 @@
 					for (j = 0; j < self._testContainer.childNodes.length; j++) {
 						clonedDiv = self._testContainer.childNodes[j];
 						clonedDiv.style.fontFamily = "'" + clonedDiv.getAttribute("data-font-family") + "', " + FontLoader.referenceFontFamilies[clonedDiv.getAttribute("data-ref-font-family-index")];
+						clonedDiv.style.fontWeight = clonedDiv.getAttribute("data-font-family-weight");
+						clonedDiv.style.fontStyle = clonedDiv.getAttribute("data-font-family-style");
 					}
 				}, 0);
 			} else if (FontLoader.useIntervalChecking) {
@@ -306,6 +314,8 @@
 					// Apply tested font-family
 					clonedDiv = sizeWatcher.getWatchedElement();
 					clonedDiv.style.fontFamily = "'" + clonedDiv.getAttribute("data-font-family") + "', " + FontLoader.referenceFontFamilies[clonedDiv.getAttribute("data-ref-font-family-index")];
+					clonedDiv.style.fontWeight = clonedDiv.getAttribute("data-font-family-weight");
+					clonedDiv.style.fontStyle = clonedDiv.getAttribute("data-font-family-style");
 				}
 			}
 		},
