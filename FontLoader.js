@@ -334,23 +334,25 @@
 		},
 		_elementSizeChanged: function(element) {
 			var fontFamily = element.getAttribute("data-font-family");
-			
+			var fontFamilyWeight = element.getAttribute("data-font-family-weight");
+			var fontFamilyStyle = element.getAttribute("data-font-family-style");
+
 			if (this._finished) {
 				return;
 			}
-			
-			// Check that the font of this element wasn't already marked as loaded by an element with different reference font family. 
-			if (typeof this._fontsMap[fontFamily] === "undefined") {
+
+			// Check that the font of this element wasn't already marked as loaded by an element with different reference font family.
+			if (typeof this._fontsMap[fontFamily + fontFamilyWeight + fontFamilyStyle] === "undefined") {
 				return;
 			}
-			
+
 			this._numberOfLoadedFonts++;
-			delete this._fontsMap[fontFamily];
-			
+			delete this._fontsMap[fontFamily + fontFamilyWeight + fontFamilyStyle];
+
 			if (this.delegate && typeof this.delegate.fontLoaded === "function") {
-				this.delegate.fontLoaded(fontFamily);
+				this.delegate.fontLoaded(fontFamily, fontFamilyWeight, fontFamilyStyle);
 			}
-			
+
 			if (this._numberOfLoadedFonts === this._numberOfFontFamilies) {
 				this._finish();
 			}
@@ -383,22 +385,35 @@
 			}
 			
 			if (this._numberOfLoadedFonts < this._numberOfFontFamilies) {
-				for (fontFamily in this._fontsMap) {
-					if (this._fontsMap.hasOwnProperty(fontFamily)) {
-						notLoadedFontFamilies.push(fontFamily);
+				for (font in this._fontsMap) {
+					if (this._fontsMap.hasOwnProperty(font)) {
+						notLoadedFontFamilies.push(this._fontsMap[font]);
 					}
 				}
+
 				callbackParameter = {
-					message: "Not all fonts were loaded",
+					message: "Not all fonts were loaded (" + this._numberOfLoadedFonts + "/" + this._numberOfFontFamilies + ")",
 					notLoadedFontFamilies: notLoadedFontFamilies
 				};
 			} else {
 				callbackParameter = null;
 			}
 			if (this.delegate && typeof this.delegate.fontsLoaded === "function") {
-				this.delegate.fontsLoaded(callbackParameter);
+				// let the browser process the fonts, this could prevent some race-conditions
+				setTimeout(function() {
+					this.delegate.fontsLoaded(callbackParameter);
+				}.bind(this), 0);
 			}
 		},
+
+		/**
+		 * get the finished state
+		 * @returns {boolean}
+		 */
+		isFinished: function () {
+			return this._finished;
+		},
+
 		/**
 		 * SizeWatcher delegate method
 		 * @param {SizeWatcher} sizeWatcher
