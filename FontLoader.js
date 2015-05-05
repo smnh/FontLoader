@@ -45,46 +45,12 @@
 	 * @constructor
 	 */
 	function FontLoader(fontFamiliesArray, delegate, timeout, contextDocument) {
-		var self = this;
-
 		// Public
 		this.delegate = delegate;
 		this.timeout = (typeof timeout !== "undefined") ? timeout : 3000;
 
 		// Process font families
-		this._fontFamiliesArray = [];
-
-		fontFamiliesArray.forEach(function (font) {
-			if (font.family) {
-				self._fontFamiliesArray.push(font);
-			} else if (font.indexOf(':') > -1) {
-				var variants = font.split(':')[1].split(',');
-				font = font.split(':')[0];
-
-				variants.forEach(function (variant) {
-					var style = 'normal';
-					if (variant.charAt(0) === 'i') {
-						style = 'italic';
-					} else if (variant.charAt(0) === 'b') {
-						style = 'bold';
-					} else if (variant.charAt(0) === 'o') {
-						style = 'oblique';
-					}
-
-					self._fontFamiliesArray.push({
-						family: font,
-						weight: parseInt(variant.charAt(1)) * 100,
-						style: style
-					});
-				});
-			} else {
-				self._fontFamiliesArray.push({
-					family: font,
-					weight: 400,
-					style: 'normal'
-				});
-			}
-		});
+		this._fontFamiliesArray = this._processFonts(fontFamiliesArray);
 
 		// Private
 		this._testDiv = null;
@@ -195,6 +161,66 @@
 
 				adobeBlankDiv.style.fontFamily = FontLoader.referenceFontFamilies[0] + ", " + adobeBlankFallbackFont;
 			}
+		},
+		_processFonts: function(fonts) {
+			var self = this;
+			var processedFonts = [];
+
+			fonts.forEach(function (font) {
+				if (self._isValidFontObject(font)) {
+					processedFonts.push(font);
+				} else if (font.indexOf(':') > -1) {
+					processedFonts = processedFonts.concat(self._convertShorthandToFontObjects(font));
+				} else {
+					processedFonts.push({
+						family: font,
+						weight: 400,
+						style: 'normal'
+					});
+				}
+			});
+
+			return processedFonts;
+		},
+		_isValidFontObject: function(fontObject) {
+			if (!fontObject.family || !fontObject.weight || !fontObject.style) {
+				return false;
+			}
+
+			if (['normal', 'italic', 'bold', 'oblique'].indexOf(fontObject.style) === -1) {
+				return false;
+			}
+
+			return true;
+		},
+		_convertShorthandToFontObjects: function(fontString) {
+			var self = this;
+			var fonts = [];
+			var variants = font.split(':')[1].split(',');
+			var font = font.split(':')[0];
+
+			variants.forEach(function (variant) {
+				var style = 'normal';
+				if (variant.charAt(0) === 'i') {
+					style = 'italic';
+				} else if (variant.charAt(0) === 'b') {
+					style = 'bold';
+				} else if (variant.charAt(0) === 'o') {
+					style = 'oblique';
+				}
+
+				var fontObject = {
+					family: font,
+					weight: parseInt(variant.charAt(1)) * 100,
+					style: style
+				};
+
+				if (self._isValidFontObject(fontObject)) {
+					fonts.push(fontObject);
+				}
+			});
+
+			return fonts;
 		},
 		_checkAdobeBlankSize: function() {
 			var adobeBlankDiv = this._testContainer.firstChild;
