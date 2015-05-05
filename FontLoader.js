@@ -264,6 +264,11 @@
 
 			return clonedDiv;
 		},
+		_setFontStylesForNode: function(node) {
+			node.style.fontFamily = "'" + node.getAttribute("data-font-family") + "', " + FontLoader.referenceFontFamilies[node.getAttribute("data-ref-font-family-index")];
+			node.style.fontWeight = node.getAttribute("data-font-family-weight");
+			node.style.fontStyle = node.getAttribute("data-font-family-style");
+		},
 		_loadFonts: function() {
 			var i, j, clonedDiv, sizeWatcher, sizeWatchers = [];
 
@@ -312,10 +317,7 @@
 				}
 				window.setTimeout(function() {
 					for (j = 0; j < self._testContainer.childNodes.length; j++) {
-						clonedDiv = self._testContainer.childNodes[j];
-						clonedDiv.style.fontFamily = "'" + clonedDiv.getAttribute("data-font-family") + "', " + FontLoader.referenceFontFamilies[clonedDiv.getAttribute("data-ref-font-family-index")];
-						clonedDiv.style.fontWeight = clonedDiv.getAttribute("data-font-family-weight");
-						clonedDiv.style.fontStyle = clonedDiv.getAttribute("data-font-family-style");
+						self._setFontStylesForNode(self._testContainer.childNodes[j]);
 					}
 				}, 0);
 			} else if (FontLoader.useIntervalChecking) {
@@ -336,9 +338,7 @@
 					sizeWatcher.beginWatching();
 					// Apply tested font-family
 					clonedDiv = sizeWatcher.getWatchedElement();
-					clonedDiv.style.fontFamily = "'" + clonedDiv.getAttribute("data-font-family") + "', " + FontLoader.referenceFontFamilies[clonedDiv.getAttribute("data-ref-font-family-index")];
-					clonedDiv.style.fontWeight = clonedDiv.getAttribute("data-font-family-weight");
-					clonedDiv.style.fontStyle = clonedDiv.getAttribute("data-font-family-style");
+					self._setFontStylesForNode(clonedDiv);
 				}
 			}
 		},
