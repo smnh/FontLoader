@@ -431,10 +431,7 @@
 				callbackParameter = null;
 			}
 			if (this.delegate && typeof this.delegate.fontsLoaded === "function") {
-				// let the browser process the fonts, this could prevent some race-conditions
-				setTimeout(function() {
-					this.delegate.fontsLoaded(callbackParameter);
-				}.bind(this), 0);
+				this.delegate.fontsLoaded(callbackParameter);
 			}
 		},
 
