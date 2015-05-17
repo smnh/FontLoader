@@ -167,16 +167,24 @@
 			var processedFonts = [];
 
 			fonts.forEach(function (font) {
-				if (self._isValidFontObject(font)) {
-					processedFonts.push(font);
-				} else if (font.indexOf(':') > -1) {
-					processedFonts = processedFonts.concat(self._convertShorthandToFontObjects(font));
-				} else {
-					processedFonts.push({
-						family: font,
-						weight: 400,
-						style: 'normal'
-					});
+				if (font === null) {
+					return;
+				}
+
+				if (typeof font === 'object') {
+					if (self._isValidFontObject(font)) {
+						processedFonts.push(font);
+					}
+				} else if (typeof font === 'string') {
+					if (font.indexOf(':') > -1) {
+						processedFonts = processedFonts.concat(self._convertShorthandToFontObjects(font));
+					} else {
+						processedFonts.push({
+							family: font,
+							weight: 400,
+							style: 'normal'
+						});
+					}
 				}
 			});
 
@@ -196,8 +204,8 @@
 		_convertShorthandToFontObjects: function(fontString) {
 			var self = this;
 			var fonts = [];
-			var variants = font.split(':')[1].split(',');
-			var font = font.split(':')[0];
+			var variants = fontString.split(':')[1].split(',');
+			var font = fontString.split(':')[0];
 
 			variants.forEach(function (variant) {
 				var style = 'normal';
@@ -270,7 +278,8 @@
 			node.style.fontStyle = node.getAttribute("data-font-family-style");
 		},
 		_loadFonts: function() {
-			var i, j, clonedDiv, sizeWatcher, sizeWatchers = [];
+			var i, j, clonedDiv, sizeWatcher, sizeWatchers = [],
+				self = this;
 
 			// Add div for each font-family
 			for (i = 0; i < this._numberOfFontFamilies; i++) {
@@ -281,7 +290,7 @@
 						this._cloneAndAppendNode(this._fontFamiliesArray[i], String(j), FontLoader.referenceFontFamilies[j]);
 					} else if (FontLoader.useIntervalChecking) {
 						clonedDiv = this._cloneAndAppendNode(this._fontFamiliesArray[i], String(j));
-						clonedDiv.style.fontFamily = "'" + this._fontFamiliesArray[i].familiy + "', " + FontLoader.referenceFontFamilies[j];
+						clonedDiv.style.fontFamily = "'" + this._fontFamiliesArray[i].family + "', " + FontLoader.referenceFontFamilies[j];
 						clonedDiv.style.fontWeight = this._fontFamiliesArray[i].weight;
 						clonedDiv.style.fontStyle = this._fontFamiliesArray[i].style;
 					} else {
@@ -408,7 +417,7 @@
 			}
 			
 			if (this._numberOfLoadedFonts < this._numberOfFontFamilies) {
-				for (font in this._fontsMap) {
+				for (var font in this._fontsMap) {
 					if (this._fontsMap.hasOwnProperty(font)) {
 						notLoadedFontFamilies.push(this._fontsMap[font]);
 					}
