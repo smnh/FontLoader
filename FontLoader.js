@@ -730,7 +730,14 @@
 			if (this._state !== SizeWatcher.states.watchingForSizeChange) {
 				return;
 			}
-			
+
+			// In some rare cases, handleEvent is called while the delegate is finished but did
+			// non clean up the DOM elements yet. In this situation we don't want the fontloader to
+			// handle this event.
+			if (this._delegate && this._delegate.isFinished()) {
+				return;
+			}
+
 			newSize = new Size(this._element.offsetWidth, this._element.offsetHeight);
 			oldSize = this._size;
 			
@@ -752,7 +759,7 @@
 				}
 			}
 
-			if (!this._continuous || this._delegate.isFinished()) {
+			if (!this._continuous) {
 				this.endWatching();
 			} else {
 				// Set the new size so in case of double scroll event we won't cause the delegate method to be executed twice
