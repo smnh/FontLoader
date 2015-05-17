@@ -1,0 +1,23 @@
+{
+  "name": "FontLoader",
+  "main": "FontLoader.js",
+  "version": "0.0.1",
+  "homepage": "https://github.com/smnh/FontLoader",
+  "authors": [
+    "smnh"
+  ],
+  "description": "The FontLoader detects and notifies when specified font-families loaded and rendered by the browser.",
+  "moduleType": [
+    "amd",
+    "globals",
+    "node"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
