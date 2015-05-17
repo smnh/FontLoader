@@ -49,8 +49,10 @@
 		this.delegate = delegate;
 		this.timeout = (typeof timeout !== "undefined") ? timeout : 3000;
 
+		// Process font families
+		this._fontFamiliesArray = this._processFonts(fontFamiliesArray);
+
 		// Private
-		this._fontFamiliesArray = fontFamiliesArray.slice(0);
 		this._testDiv = null;
 		this._testContainer = null;
 		this._adobeBlankSizeWatcher = null;
@@ -160,6 +162,74 @@
 				adobeBlankDiv.style.fontFamily = FontLoader.referenceFontFamilies[0] + ", " + adobeBlankFallbackFont;
 			}
 		},
+		_processFonts: function(fonts) {
+			var self = this;
+			var processedFonts = [];
+
+			fonts.forEach(function (font) {
+				if (font === null) {
+					return;
+				}
+
+				if (typeof font === 'object') {
+					if (self._isValidFontObject(font)) {
+						processedFonts.push(font);
+					}
+				} else if (typeof font === 'string') {
+					if (font.indexOf(':') > -1) {
+						processedFonts = processedFonts.concat(self._convertShorthandToFontObjects(font));
+					} else {
+						processedFonts.push({
+							family: font,
+							weight: 400,
+							style: 'normal'
+						});
+					}
+				}
+			});
+
+			return processedFonts;
+		},
+		_isValidFontObject: function(fontObject) {
+			if (!fontObject.family || !fontObject.weight || !fontObject.style) {
+				return false;
+			}
+
+			if (['normal', 'italic', 'bold', 'oblique'].indexOf(fontObject.style) === -1) {
+				return false;
+			}
+
+			return true;
+		},
+		_convertShorthandToFontObjects: function(fontString) {
+			var self = this;
+			var fonts = [];
+			var variants = fontString.split(':')[1].split(',');
+			var font = fontString.split(':')[0];
+
+			variants.forEach(function (variant) {
+				var style = 'normal';
+				if (variant.charAt(0) === 'i') {
+					style = 'italic';
+				} else if (variant.charAt(0) === 'b') {
+					style = 'bold';
+				} else if (variant.charAt(0) === 'o') {
+					style = 'oblique';
+				}
+
+				var fontObject = {
+					family: font,
+					weight: parseInt(variant.charAt(1)) * 100,
+					style: style
+				};
+
+				if (self._isValidFontObject(fontObject)) {
+					fonts.push(fontObject);
+				}
+			});
+
+			return fonts;
+		},
 		_checkAdobeBlankSize: function() {
 			var adobeBlankDiv = this._testContainer.firstChild;
 			this._adobeBlankLoaded(adobeBlankDiv);
@@ -187,36 +257,45 @@
 
 			this._loadFonts();
 		},
+		_cloneAndAppendNode: function(fontFamily, fontFamilyIndex, referenceFontFamiliy) {
+			var clonedDiv = this._testDiv.cloneNode(true);
+			clonedDiv.setAttribute("data-font-family", fontFamily.family);
+			clonedDiv.setAttribute("data-font-family-weight", fontFamily.weight);
+			clonedDiv.setAttribute("data-font-family-style", fontFamily.style);
+			clonedDiv.setAttribute("data-ref-font-family-index", fontFamilyIndex);
+
+			if (referenceFontFamiliy) {
+				clonedDiv.style.fontFamily = referenceFontFamiliy;
+			}
+
+			this._testContainer.appendChild(clonedDiv);
+
+			return clonedDiv;
+		},
+		_setFontStylesForNode: function(node) {
+			node.style.fontFamily = "'" + node.getAttribute("data-font-family") + "', " + FontLoader.referenceFontFamilies[node.getAttribute("data-ref-font-family-index")];
+			node.style.fontWeight = node.getAttribute("data-font-family-weight");
+			node.style.fontStyle = node.getAttribute("data-font-family-style");
+		},
 		_loadFonts: function() {
 			var i, j, clonedDiv, sizeWatcher, sizeWatchers = [],
 				self = this;
 
 			// Add div for each font-family
 			for (i = 0; i < this._numberOfFontFamilies; i++) {
-				this._fontsMap[this._fontFamiliesArray[i]] = true;
+				this._fontsMap[this._fontFamiliesArray[i].family + this._fontFamiliesArray[i].weight + this._fontFamiliesArray[i].style] = this._fontFamiliesArray[i];
 
-				if (FontLoader.useResizeEvent) {
-					for (j = 0; j < FontLoader.referenceFontFamilies.length; j++) {
-						clonedDiv = this._testDiv.cloneNode(true);
-						clonedDiv.setAttribute("data-font-family", this._fontFamiliesArray[i]);
-						clonedDiv.setAttribute("data-ref-font-family-index", String(j));
-						clonedDiv.style.fontFamily = FontLoader.referenceFontFamilies[j];
-						this._testContainer.appendChild(clonedDiv);
-					}
-				} else if (FontLoader.useIntervalChecking) {
-					for (j = 0; j < FontLoader.referenceFontFamilies.length; j++) {
-						clonedDiv = this._testDiv.cloneNode(true);
-						clonedDiv.setAttribute("data-font-family", this._fontFamiliesArray[i]);
-						clonedDiv.setAttribute("data-ref-font-family-index", String(j));
-						clonedDiv.style.fontFamily = "'" + this._fontFamiliesArray[i] + "', " + FontLoader.referenceFontFamilies[j];
-						this._testContainer.appendChild(clonedDiv);
-					}
-				} else {
-					for (j = 0; j < FontLoader.referenceFontFamilies.length; j++) {
-						clonedDiv = this._testDiv.cloneNode(true);
-						clonedDiv.setAttribute("data-font-family", this._fontFamiliesArray[i]);
-						clonedDiv.setAttribute("data-ref-font-family-index", String(j));
-						clonedDiv.style.fontFamily = FontLoader.referenceFontFamilies[j];
+				for (j = 0; j < FontLoader.referenceFontFamilies.length; j++) {
+					if (FontLoader.useResizeEvent) {
+						this._cloneAndAppendNode(this._fontFamiliesArray[i], String(j), FontLoader.referenceFontFamilies[j]);
+					} else if (FontLoader.useIntervalChecking) {
+						clonedDiv = this._cloneAndAppendNode(this._fontFamiliesArray[i], String(j));
+						clonedDiv.style.fontFamily = "'" + this._fontFamiliesArray[i].family + "', " + FontLoader.referenceFontFamilies[j];
+						clonedDiv.style.fontWeight = this._fontFamiliesArray[i].weight;
+						clonedDiv.style.fontStyle = this._fontFamiliesArray[i].style;
+					} else {
+						clonedDiv = this._cloneAndAppendNode(this._fontFamiliesArray[i], String(j), FontLoader.referenceFontFamilies[j]);
+
 						sizeWatcher = new SizeWatcher(/** @type HTMLElement */clonedDiv, {
 							container: this._testContainer,
 							delegate: this,
@@ -247,8 +326,7 @@
 				}
 				window.setTimeout(function() {
 					for (j = 0; j < self._testContainer.childNodes.length; j++) {
-						clonedDiv = self._testContainer.childNodes[j];
-						clonedDiv.style.fontFamily = "'" + clonedDiv.getAttribute("data-font-family") + "', " + FontLoader.referenceFontFamilies[clonedDiv.getAttribute("data-ref-font-family-index")];
+						self._setFontStylesForNode(self._testContainer.childNodes[j]);
 					}
 				}, 0);
 			} else if (FontLoader.useIntervalChecking) {
@@ -269,7 +347,7 @@
 					sizeWatcher.beginWatching();
 					// Apply tested font-family
 					clonedDiv = sizeWatcher.getWatchedElement();
-					clonedDiv.style.fontFamily = "'" + clonedDiv.getAttribute("data-font-family") + "', " + FontLoader.referenceFontFamilies[clonedDiv.getAttribute("data-ref-font-family-index")];
+					self._setFontStylesForNode(clonedDiv);
 				}
 			}
 		},
@@ -288,23 +366,25 @@
 		},
 		_elementSizeChanged: function(element) {
 			var fontFamily = element.getAttribute("data-font-family");
-			
+			var fontFamilyWeight = element.getAttribute("data-font-family-weight");
+			var fontFamilyStyle = element.getAttribute("data-font-family-style");
+
 			if (this._finished) {
 				return;
 			}
-			
-			// Check that the font of this element wasn't already marked as loaded by an element with different reference font family. 
-			if (typeof this._fontsMap[fontFamily] === "undefined") {
+
+			// Check that the font of this element wasn't already marked as loaded by an element with different reference font family.
+			if (typeof this._fontsMap[fontFamily + fontFamilyWeight + fontFamilyStyle] === "undefined") {
 				return;
 			}
-			
+
 			this._numberOfLoadedFonts++;
-			delete this._fontsMap[fontFamily];
-			
+			delete this._fontsMap[fontFamily + fontFamilyWeight + fontFamilyStyle];
+
 			if (this.delegate && typeof this.delegate.fontLoaded === "function") {
-				this.delegate.fontLoaded(fontFamily);
+				this.delegate.fontLoaded(fontFamily, fontFamilyWeight, fontFamilyStyle);
 			}
-			
+
 			if (this._numberOfLoadedFonts === this._numberOfFontFamilies) {
 				this._finish();
 			}
@@ -337,13 +417,14 @@
 			}
 			
 			if (this._numberOfLoadedFonts < this._numberOfFontFamilies) {
-				for (fontFamily in this._fontsMap) {
-					if (this._fontsMap.hasOwnProperty(fontFamily)) {
-						notLoadedFontFamilies.push(fontFamily);
+				for (var font in this._fontsMap) {
+					if (this._fontsMap.hasOwnProperty(font)) {
+						notLoadedFontFamilies.push(this._fontsMap[font]);
 					}
 				}
+
 				callbackParameter = {
-					message: "Not all fonts were loaded",
+					message: "Not all fonts were loaded (" + this._numberOfLoadedFonts + "/" + this._numberOfFontFamilies + ")",
 					notLoadedFontFamilies: notLoadedFontFamilies
 				};
 			} else {
@@ -353,6 +434,15 @@
 				this.delegate.fontsLoaded(callbackParameter);
 			}
 		},
+
+		/**
+		 * get the finished state
+		 * @returns {boolean}
+		 */
+		isFinished: function () {
+			return this._finished;
+		},
+
 		/**
 		 * SizeWatcher delegate method
 		 * @param {SizeWatcher} sizeWatcher
@@ -640,7 +730,14 @@
 			if (this._state !== SizeWatcher.states.watchingForSizeChange) {
 				return;
 			}
-			
+
+			// In some rare cases, handleEvent is called while the delegate is finished but did
+			// non clean up the DOM elements yet. In this situation we don't want the fontloader to
+			// handle this event.
+			if (this._delegate && this._delegate.isFinished()) {
+				return;
+			}
+
 			newSize = new Size(this._element.offsetWidth, this._element.offsetHeight);
 			oldSize = this._size;
 			
@@ -661,7 +758,7 @@
 					return;
 				}
 			}
-			
+
 			if (!this._continuous) {
 				this.endWatching();
 			} else {
