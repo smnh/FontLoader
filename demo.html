@@ -41,13 +41,17 @@
 		<div style="font-family: 'Capriola', serif;">The quick brown fox jumps over the lazy dog</div>
 		<div style="font-family: 'Devonshire', serif;">The quick brown fox jumps over the lazy dog</div>
 		<div style="font-family: 'Fredericka the Great', serif;">The quick brown fox jumps over the lazy dog</div>
+        <div style="font-family: 'Open Sans', serif; font-style: italic;">The quick brown fox jumps over the lazy dog</div>
+        <div style="font-family: 'Open Sans', serif; font-weight: 800;">The quick brown fox jumps over the lazy dog</div>
+        <div style="font-family: 'Roboto', serif; font-weight: 100; font-style: italic;">The quick brown fox jumps over the lazy dog</div>
+        <div style="font-family: 'Roboto', serif; font-weight: 500;">The quick brown fox jumps over the lazy dog</div>
 	</div>
 	<script type="text/javascript">
 		var loadingElm = document.getElementById("loading"),
 			fontsContainerElm = document.getElementById("fontsContainer"),
 			elementsMap = {},
 			fontLoader,
-			fontFamiliesArray = [];
+			fonts = [];
 		
 		// When developer tools are closed IE8 does not have console object.
 		if (typeof console === "undefined") {
@@ -55,20 +59,30 @@
 		}
 		
 		function addFonts() {
-			var i, link, div, fontFamily, head = document.getElementsByTagName("head")[0];
+			var i, link, div, fontFamily, fontVariation, googleFontVariation, head = document.getElementsByTagName("head")[0];
 			// For each font family create <link> in head
 			for (i = 0; i < fontsContainerElm.childNodes.length - 1; i++) {
-				if (fontsContainer.childNodes[i].nodeType !== 1) continue;
+				if (fontsContainerElm.childNodes[i].nodeType !== 1) continue;
 
 				div = fontsContainerElm.childNodes[i];
-				fontFamily = div.style.fontFamily.match(/[^'",;]+/)[0];
-				elementsMap[fontFamily] = div;
-				fontFamiliesArray.push(fontFamily);
+                fontFamily = div.style.fontFamily.match(/[^'",;]+/)[0];
+                fontVariation = fontFamily;
+                googleFontVariation = fontFamily;
+                if (div.style.fontStyle || div.style.fontWeight) {
+                    fontVariation += ":";
+                    fontVariation += div.style.fontStyle ? div.style.fontStyle[0] : "n";
+                    fontVariation += div.style.fontWeight ? div.style.fontWeight[0] : "4";
+                    googleFontVariation += ":";
+                    googleFontVariation += div.style.fontWeight ? div.style.fontWeight : "";
+                    googleFontVariation += div.style.fontStyle ? div.style.fontStyle : "";
+                }
+				elementsMap[fontVariation] = div;
+				fonts.push(fontVariation);
 				
 				link = document.createElement("link");
 				link.rel = "stylesheet";
 				link.type = "text/css";
-				link.href = "http://fonts.googleapis.com/css?family=" + fontFamily;
+				link.href = "http://fonts.googleapis.com/css?family=" + googleFontVariation;
 				head.appendChild(link);
 			}
 		}
@@ -79,15 +93,15 @@
 			
 			addFonts();
 
-			fontLoader = new FontLoader(fontFamiliesArray, {
-				"fontsLoaded": function(error) {
-					console.log("error:", error);
-					loadingElm.style.display = "none";
-					fontsContainerElm.style.visibility = "visible";
+			fontLoader = new FontLoader(fonts, {
+				fontLoaded: function(font) {
+                    console.log("font loaded: " + font.family + ", " + font.style + ", " + font.weight);
 				},
-				"fontLoaded": function(fontFamily) {
-					console.log("font loaded: " + fontFamily + " element size: " + elementsMap[fontFamily].offsetWidth + "x" + elementsMap[fontFamily].offsetHeight);
-				}
+                complete: function(error) {
+                    console.log("error:", error);
+                    loadingElm.style.display = "none";
+                    fontsContainerElm.style.visibility = "visible";
+                }
 			}, 3000);
 			fontLoader.loadFonts();
 			
