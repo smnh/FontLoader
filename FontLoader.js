@@ -73,6 +73,7 @@
 		this._testDiv = null;
 		this._testContainer = null;
 		this._adobeBlankSizeWatcher = null;
+		this._sizeWatchers = [];
 		this._timeoutId = null;
 		this._intervalId = null;
 		this._intervalDelay = 50;
@@ -371,7 +372,7 @@
             return font.family + font.weight + font.style
         },
 		_loadFonts: function() {
-			var i, j, clonedDiv, sizeWatcher, sizeWatchers = [],
+			var i, j, clonedDiv, sizeWatcher,
                 font,
                 fontKey,
                 fontVariationKey,
@@ -416,7 +417,7 @@
 						});
 						// The prepareForWatch() and beginWatching() methods will be invoked in separate iterations to
 						// reduce number of browser's CSS recalculations.
-						sizeWatchers.push(sizeWatcher);
+						this._sizeWatchers.push(sizeWatcher);
 					}
 				}
 			}
@@ -449,17 +450,17 @@
 			} else {
 				// We are dividing the prepareForWatch() and beginWatching() methods to optimize browser performance by
 				// removing CSS recalculation from each iteration to the end of iterations.
-				for (i = 0; i < this._numberOfFonts * FontLoader.referenceFontFamilies.length; i++) {
-					sizeWatcher = sizeWatchers[i];
-					sizeWatcher.prepareForWatch();
-				}
-				for (i = 0; i < this._numberOfFonts * FontLoader.referenceFontFamilies.length; i++) {
-					sizeWatcher = sizeWatchers[i];
-					sizeWatcher.beginWatching();
-					// Apply tested font-family
-					clonedDiv = sizeWatcher.getWatchedElement();
-					clonedDiv.style.fontFamily = "'" + this._getFontFamilyFromElement(clonedDiv) + "', " + self._getReferenceFontFamilyFromElement(clonedDiv);
-				}
+                for (i = 0; i < this._sizeWatchers.length; i++) {
+                    sizeWatcher = this._sizeWatchers[i];
+                    sizeWatcher.prepareForWatch();
+                }
+                for (i = 0; i < this._sizeWatchers.length; i++) {
+                    sizeWatcher = this._sizeWatchers[i];
+                    sizeWatcher.beginWatching();
+                    // Apply tested font-family
+                    clonedDiv = sizeWatcher.getWatchedElement();
+                    clonedDiv.style.fontFamily = "'" + this._getFontFamilyFromElement(clonedDiv) + "', " + self._getReferenceFontFamilyFromElement(clonedDiv);
+                }
 			}
 		},
 		_checkSizes: function() {
@@ -511,7 +512,7 @@
 			}
 		},
 		_finish: function() {
-			var error,
+			var error, i, sizeWatcher,
                 fontKey,
 				notLoadedFonts = [];
 			
@@ -522,8 +523,19 @@
 			this._finished = true;
 			
 			if (this._adobeBlankSizeWatcher !== null) {
+                if (this._adobeBlankSizeWatcher.getState() === SizeWatcher.states.watchingForSizeChange) {
+                    this._adobeBlankSizeWatcher.endWatching();
+                }
 				this._adobeBlankSizeWatcher = null;
 			}
+
+            for (i = 0; i < this._sizeWatchers.length; i++) {
+                sizeWatcher = this._sizeWatchers[i];
+                if (sizeWatcher.getState() === SizeWatcher.states.watchingForSizeChange) {
+                    sizeWatcher.endWatching();
+                }
+            }
+            this._sizeWatchers = [];
 			
 			if (this._testContainer !== null) {
 				this._testContainer.parentNode.removeChild(this._testContainer);
@@ -694,6 +706,9 @@
 		getWatchedElement: function() {
 			return this._element;
 		},
+        getState: function() {
+            return this._state;
+        },
 		setSize: function(size) {
 			this._size = size;
 			//noinspection JSBitwiseOperatorUsage
