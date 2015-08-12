@@ -84,7 +84,7 @@
 		this._document = contextDocument || document;
 	}
 
-	FontLoader.useAdobeBlank = false;//!isIE || ieVer >= 11.0;
+	FontLoader.useAdobeBlank = !isIE || ieVer >= 11.0;
 	FontLoader.useResizeEvent = isIE && ieVer < 11.0 && typeof document.attachEvent !== "undefined";
 	FontLoader.useIntervalChecking = window.opera || (isIE && ieVer < 11.0 && !FontLoader.useResizeEvent);
 	FontLoader.referenceText = " !\"\\#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~";
