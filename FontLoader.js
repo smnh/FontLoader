@@ -399,7 +399,7 @@
                         clonedDiv.style.fontFamily = FontLoader.referenceFontFamilies[j];
                         if (FontLoader.useAdobeBlank) {
                             referenceFontSize = FontLoader.adobeBlankReferenceSize;
-                            sizeWatcherDirection = SizeWatcher.directions.decrease;
+                            sizeWatcherDirection = SizeWatcher.directions.increase;
                             sizeWatcherDimension = SizeWatcher.dimensions.horizontal;
                         } else {
                             fontVariationKey = this._fontVariationKeyForFont(font);
