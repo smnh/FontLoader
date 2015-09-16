@@ -1,6 +1,6 @@
 {
   "name": "FontLoader",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "detects and notifies when specified font-families loaded and rendered by the browser",
   "main": "FontLoader.js",
   "scripts": {
