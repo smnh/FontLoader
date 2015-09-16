@@ -174,11 +174,10 @@
             this._testContainer.appendChild(adobeBlankDiv);
             this._document.body.appendChild(this._testContainer);
 
-            adobeBlankDiv.style.fontFamily = adobeBlankFallbackFont;
-
             // When using AdobeBlank (all browsers except IE < 11) only interval checking and size watcher methods
             // are available for watching element size.
             if (FontLoader.useIntervalChecking) {
+                adobeBlankDiv.style.fontFamily = FontLoader.referenceFontFamilies[0] + ", " + adobeBlankFallbackFont;
                 this._testContainer.appendChild(adobeBlankDiv);
                 // Start polling element sizes but also do first synchronous check in case all fonts where already loaded.
                 this._intervalId = window.setInterval(function intervalFire() {
@@ -186,6 +185,7 @@
                 }, this._intervalDelay);
                 this._checkAdobeBlankSize();
             } else {
+                adobeBlankDiv.style.fontFamily = adobeBlankFallbackFont;
                 this._adobeBlankSizeWatcher = new SizeWatcher(/** @type HTMLElement */adobeBlankDiv, {
                     container: this._testContainer,
                     delegate: this,
@@ -196,9 +196,8 @@
                 });
                 this._adobeBlankSizeWatcher.prepareForWatch();
                 this._adobeBlankSizeWatcher.beginWatching();
+                adobeBlankDiv.style.fontFamily = FontLoader.referenceFontFamilies[0] + ", " + adobeBlankFallbackFont;
             }
-
-            adobeBlankDiv.style.fontFamily = FontLoader.referenceFontFamilies[0] + ", " + adobeBlankFallbackFont;
         },
         _getNewFontVariationsFromFonts: function(fonts) {
             var font, key, i,
