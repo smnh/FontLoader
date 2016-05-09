@@ -20,11 +20,12 @@ The `FontLoader(fonts, delegate, timeout)` constructor receives three parameters
 
 After the `FontLoaded` was instantiated, call `loadFonts` method to begin watching for fonts to load. If some or all fonts were already loaded, the appropriate delegate methods will be invoked as expected.
 
-The `FontDescriptor` object is an object having all the following fields:
+The `FontDescriptor` object is an object with the following fields:
 
 1. `family` - the font family (e.g.: 'Open Sans')
 2. `weight` - the font weight (e.g.: 400)
 3. `style` - the font style (e.g.: 'italic')
+4. `stretch` - the font stretch (e.g.: 'condensed'), optional
 
 Example
 =======
