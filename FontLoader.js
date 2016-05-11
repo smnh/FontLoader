@@ -34,6 +34,81 @@
      * @property {String} style
      * @property {String} stretch
      */
+    function FontDescriptor(fontDescriptor) {
+        this._validateFontDescriptor(fontDescriptor);
+        this.family = fontDescriptor.family;
+        this.weight = fontDescriptor.weight;
+        this.style = fontDescriptor.style;
+        this.stretch = fontDescriptor.stretch;
+    }
+
+    FontDescriptor.prototype = {
+        constructor: FontDescriptor,
+        /**
+         * Returns font variation identifier of the FontDescriptor.
+         *
+         * FontDescriptors with different family-names may have same variation identifiers.
+         * This identifier is useful for mapping and storing font dimensions of fallback fonts with font variation
+         * properties similar to these of the loaded fonts.
+         *
+         * @returns {string}
+         */
+        variationKey: function() {
+            return this.weight + this.style + this.stretch;
+        },
+        /**
+         * Returns identifier of the FontDescriptor.
+         *
+         * @returns {string}
+         */
+        fontKey: function() {
+            return this.family + this.variationKey();
+        },
+        toJSON: function() {
+            return {
+                family: this.family,
+                weight: this.weight,
+                style: this.style,
+                stretch: this.stretch
+            };
+        },
+        _validateFontDescriptor: function(fontDescriptor) {
+            var style, stretch;
+
+            if (!fontDescriptor.family || !fontDescriptor.weight || !fontDescriptor.style) {
+                throw new Error("Illegal font descriptor, family, weight and style properties are required.")
+            }
+
+            if (!('possibleFontStyles' in FontLoader)) {
+                FontLoader.possibleFontStyles = [];
+                for (style in FontLoader.fontStyleAliasesMap) {
+                    if (FontLoader.fontStyleAliasesMap.hasOwnProperty(style)) {
+                        FontLoader.possibleFontStyles.push(FontLoader.fontStyleAliasesMap[style]);
+                    }
+                }
+            }
+            if (FontLoader.possibleFontStyles.indexOf(fontDescriptor.style) === -1) {
+                throw new Error("Illegal font descriptor, style property must be one of the following: " + FontLoader.possibleFontStyles.join(", "));
+            }
+
+            // For backward compatibility do not require "stretch" property
+            if ('stretch' in fontDescriptor) {
+                if (!('possibleFontStretches' in FontLoader)) {
+                    FontLoader.possibleFontStretches = [];
+                    for (stretch in FontLoader.fontStretchAliasesMap) {
+                        if (FontLoader.fontStretchAliasesMap.hasOwnProperty(stretch)) {
+                            FontLoader.possibleFontStretches.push(FontLoader.fontStretchAliasesMap[stretch]);
+                        }
+                    }
+                }
+                if (FontLoader.possibleFontStretches.indexOf(fontDescriptor.stretch) === -1) {
+                    throw new Error("Illegal font descriptor, stretch property must be one of the following: " + FontLoader.possibleFontStretches.join(", "));
+                }
+            } else {
+                fontDescriptor.stretch = 'normal';
+            }
+        }
+    };
 
     /**
      * FontLoader detects when web fonts specified in the "fontFamiliesArray" array were loaded and rendered. Then it
@@ -72,6 +147,7 @@
 
         // Private
         this._fontsArray = this._parseFonts(fonts);
+        this._started = false;
         this._testDiv = null;
         this._testContainer = null;
         this._adobeBlankSizeWatcher = null;
@@ -103,6 +179,11 @@
         loadFonts: function() {
             var self = this,
                 newFontVariations;
+
+            if (this._started) {
+                throw new Error("FontLoader: loadFonts can not be called twice. Create new FontLoader to load different fonts.");
+            }
+            this._started = true;
 
             if (this._numberOfFonts === 0) {
                 this._finish();
@@ -203,112 +284,85 @@
                 adobeBlankDiv.style.fontFamily = FontLoader.referenceFontFamilies[0] + ", " + adobeBlankFallbackFont;
             }
         },
-        _getNewFontVariationsFromFonts: function(fonts) {
-            var font, key, i,
+        _getNewFontVariationsFromFonts: function(fontDescriptors) {
+            var fontDescriptor, key, i,
                 variations = [],
                 variationsMap = {};
 
-            for (i = 0; i < fonts.length; i++) {
-                font = fonts[i];
-                key = this._fontVariationKeyForFont(font);
+            for (i = 0; i < fontDescriptors.length; i++) {
+                fontDescriptor = fontDescriptors[i];
+                key = fontDescriptor.variationKey();
                 if (!(key in variationsMap) && !(key in FontLoader.referenceFontFamilyVariationSizes)) {
                     variationsMap[key] = true;
                     variations.push({
                         key: key,
-                        weight: font.weight,
-                        style: font.style,
-                        stretch: font.stretch
+                        weight: fontDescriptor.weight,
+                        style: fontDescriptor.style,
+                        stretch: fontDescriptor.stretch
                     });
                 }
             }
             return variations;
         },
         _parseFonts: function(fonts) {
-            var processedFonts = [], i, font;
+            var fontDescriptors = [], filteredFD,
+                i, font, fontKey, fontKeys = {};
 
             for (i = 0; i < fonts.length; i++) {
                 font = fonts[i];
                 if (typeof font === "string") {
                     if (font.indexOf(':') > -1) {
-                        processedFonts = processedFonts.concat(this._convertShorthandToFontObjects(font));
+                        fontDescriptors = fontDescriptors.concat(this._parseFVD(font));
                     } else {
-                        processedFonts.push({
+                        fontDescriptors.push(new FontDescriptor({
                             family: font,
                             weight: 400,
                             style: 'normal',
                             stretch: 'normal'
-                        });
+                        }));
                     }
-                } else if (this._isValidFontObject(font)) {
-                    processedFonts.push(font);
                 } else {
-                    throw new Error("Invalid font format");
+                    fontDescriptors.push(new FontDescriptor(font));
                 }
             }
 
-            return processedFonts;
-        },
-        /**
-         * @param {FontDescriptor} fontObject
-         * @returns {boolean}
-         * @private
-         */
-        _isValidFontObject: function(fontObject) {
-            var stretchAlias;
-            if (!fontObject.family || !fontObject.weight || !fontObject.style) {
-                return false;
-            }
-            if (['normal', 'italic', 'bold', 'oblique'].indexOf(fontObject.style) === -1) {
-                return false;
-            }
-            // For backward compatibility to not require "stretch" property
-            if ('stretch' in fontObject) {
-                if (!('possibleFontStretches' in FontLoader)) {
-                    FontLoader.possibleFontStretches = [];
-                    for (stretchAlias in FontLoader.fontStretchAliasesMap) {
-                        if (FontLoader.fontStretchAliasesMap.hasOwnProperty(stretchAlias)) {
-                            FontLoader.possibleFontStretches.push(FontLoader.fontStretchAliasesMap[stretchAlias]);
-                        }
-                    }
+            // Filter duplicate fonts
+            filteredFD = [];
+            for (i = 0; i < fontDescriptors.length; i++) {
+                fontKey = fontDescriptors[i].fontKey();
+                if (!(fontKey in fontKeys)) {
+                    fontKeys[fontKey] = true;
+                    filteredFD.push(fontDescriptors[i]);
                 }
-                if (FontLoader.possibleFontStretches.indexOf(fontObject.stretch) === -1) {
-                    return false;
-                }
-            } else {
-                fontObject.stretch = 'normal';
             }
-            return true;
 
+            return filteredFD;
         },
         /**
          * @param {string} fontString
          * @returns {Array.<FontDescriptor>}
          * @private
          */
-        _convertShorthandToFontObjects: function(fontString) {
-            var fonts = [], i, variant,
+        _parseFVD: function(fontString) {
+            var fontDescriptors = [],
                 parts = fontString.split(':'),
-                variants,
-                fontFamily;
+                fontFamily, variants, i, variant,
+                styleAlias, weightAlias, stretchAlias,
+                weight, style, stretch;
 
             fontFamily = parts[0];
             variants = parts[1].split(',');
 
             for (i = 0; i < variants.length; i++) {
                 variant = variants[i];
-                var styleAlias,
-                    weightAlias,
-                    stretchAlias = "n", // stretch character is optional, default is 'n': 'normal'
-                    weight,
-                    style,
-                    stretch;
 
                 if (variant.length < 2 || variant.length > 3) {
-                    throw new Error("Invalid Font Variation Description: '" + variant + "' for font string: '" + fontString + "', number of characters must be 2 or 3");
+                    throw new Error("Invalid Font Variation Description: '" + fontString + "', number of variation characters must be 2 or 3");
                 }
 
                 styleAlias = variant[0];
                 weightAlias = variant[1];
+                stretchAlias = "n"; // stretch character is optional, default is 'n': 'normal'
                 if (variant.length === 3) {
                     stretchAlias = variant[2]
                 }
@@ -316,12 +370,12 @@
                 if (styleAlias in FontLoader.fontStyleAliasesMap) {
                     style = FontLoader.fontStyleAliasesMap[styleAlias];
                 } else {
-                    throw new Error("Invalid Font Variation Description: '" + variant + "' for font string: '" + fontString + "', the first character is not complying to FVD font-style specification");
+                    throw new Error("Invalid Font Variation Description: '" + fontString + "', the first variant character is not complying to FVD font-style specification");
                 }
 
                 weight = parseInt(weightAlias, 10);
                 if (isNaN(weight)) {
-                    throw new Error("Invalid Font Variation Description: '" + variant + "' for font string: '" + fontString + "', the second character is not complying to FVD font-weight specification");
+                    throw new Error("Invalid Font Variation Description: '" + fontString + "', the second variant character is not complying to FVD font-weight specification");
                 } else {
                     weight *= 100;
                 }
@@ -329,18 +383,18 @@
                 if (stretchAlias in FontLoader.fontStretchAliasesMap) {
                     stretch = FontLoader.fontStretchAliasesMap[stretchAlias];
                 } else {
-                    throw new Error("Invalid Font Variation Description: '" + variant + "' for font string: '" + fontString + "', the third character is not complying to FVD font-stretch specification");
+                    throw new Error("Invalid Font Variation Description: '" + fontString + "', the third variant character is not complying to FVD font-stretch specification");
                 }
 
-                fonts.push({
+                fontDescriptors.push(new FontDescriptor({
                     family: fontFamily,
                     weight: weight,
                     style: style,
                     stretch: stretch
-                });
+                }));
             }
 
-            return fonts;
+            return fontDescriptors;
         },
         _addAdobeBlankFontFaceIfNeeded: function() {
             var adobeBlankFontFaceStyle;
@@ -406,12 +460,6 @@
             var referenceFontFamilyIndex = this._getReferenceFontFamilyIndexFromElement(element);
             return FontLoader.referenceFontFamilies[referenceFontFamilyIndex];
         },
-        _fontVariationKeyForFont: function(font) {
-            return font.weight + font.style + font.stretch;
-        },
-        _fontsMapKeyForFont: function(font) {
-            return font.family + font.weight + font.style + font.stretch;
-        },
         _loadFonts: function() {
             var i, j, clonedDiv, sizeWatcher,
                 font,
@@ -425,7 +473,7 @@
             // Add div for each font-family
             for (i = 0; i < this._numberOfFonts; i++) {
                 font = this._fontsArray[i];
-                fontKey = this._fontsMapKeyForFont(font);
+                fontKey = font.fontKey();
                 this._fontsMap[fontKey] = font;
 
                 for (j = 0; j < FontLoader.referenceFontFamilies.length; j++) {
@@ -443,7 +491,7 @@
                             sizeWatcherDirection = SizeWatcher.directions.increase;
                             sizeWatcherDimension = SizeWatcher.dimensions.horizontal;
                         } else {
-                            fontVariationKey = this._fontVariationKeyForFont(font);
+                            fontVariationKey = font.variationKey();
                             referenceFontSize = FontLoader.referenceFontFamilyVariationSizes[fontVariationKey][j];
                             sizeWatcherDirection = SizeWatcher.directions.both;
                             sizeWatcherDimension = SizeWatcher.dimensions.both;
@@ -514,7 +562,7 @@
                     refSize = FontLoader.adobeBlankReferenceSize;
                 } else {
                     font = this._getFontFromElement(testDiv);
-                    fontVariationKey = this._fontVariationKeyForFont(font);
+                    fontVariationKey = font.variationKey();
                     refFontFamilyIndex = this._getReferenceFontFamilyIndexFromElement(testDiv);
                     refSize = FontLoader.referenceFontFamilyVariationSizes[fontVariationKey][refFontFamilyIndex];
                 }
@@ -545,7 +593,7 @@
             delete this._fontsMap[fontKey];
 
             if (this.delegate && typeof this.delegate.fontLoaded === "function") {
-                this.delegate.fontLoaded(font);
+                this.delegate.fontLoaded(font.toJSON());
             }
 
             if (this._numberOfLoadedFonts === this._numberOfFonts) {
@@ -594,7 +642,7 @@
                 if (this._numberOfLoadedFonts < this._numberOfFonts) {
                     for (fontKey in this._fontsMap) {
                         if (this._fontsMap.hasOwnProperty(fontKey)) {
-                            notLoadedFonts.push(this._fontsMap[fontKey]);
+                            notLoadedFonts.push(this._fontsMap[fontKey].toJSON());
                         }
                     }
                     error = {
