@@ -198,7 +198,7 @@
 
             // Use constant line-height so there won't be changes in height because Adobe Blank uses zero width but not zero height.
             this._testContainer = this._document.createElement("div");
-            this._testContainer.style.cssText = "position:absolute; left:-10000px; top:-10000px; white-space:nowrap; font-size:20px; line-height:20px; visibility:hidden;";
+            this._testContainer.style.cssText = "position:absolute; left:-10000px; top:-10000px; white-space:nowrap; font-size:20px; line-height:20px;";
 
             // Create testDiv template that will be cloned for each font
             this._testDiv = this._document.createElement("div");
